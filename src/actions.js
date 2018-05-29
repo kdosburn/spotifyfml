@@ -1,64 +1,34 @@
 import fetch from 'cross-fetch'
- 
-export const REQUEST_POSTS = 'REQUEST_POSTS'
-export const RECEIVE_POSTS = 'RECEIVE_POSTS'
-export const SELECT_SUBREDDIT = 'SELECT_SUBREDDIT'
-export const INVALIDATE_SUBREDDIT = 'INVALIDATE_SUBREDDIT'
- 
-export function selectSubreddit(subreddit) {
+import secret from './components/secret'
+
+  
+export const REQUEST_USER = 'REQUEST_USER'
+export const RECEIVE_PLAYLISTS = 'RECEIVE_PLAYLISTS'
+
+export function requestUser(){
   return {
-    type: SELECT_SUBREDDIT,
-    subreddit
+    type: REQUEST_USER
   }
 }
- 
-export function invalidateSubreddit(subreddit) {
+
+function receivePlaylists(json) {
   return {
-    type: INVALIDATE_SUBREDDIT,
-    subreddit
-  }
-}
- 
-function requestPosts(subreddit) {
-  return {
-    type: REQUEST_POSTS,
-    subreddit
-  }
-}
- 
-function receivePosts(subreddit, json) {
-  return {
-    type: RECEIVE_POSTS,
-    subreddit,
-    posts: json.data.children.map(child => child.data),
+    type: RECEIVE_PLAYLISTS,
+    playlists: json.items.map(child => child),
     receivedAt: Date.now()
   }
 }
  
-function fetchPosts(subreddit) {
+export function fetchThisUser(){
+  console.log('SECRET', secret)
   return dispatch => {
-    dispatch(requestPosts(subreddit))
-    return fetch(`https://www.reddit.com/r/${subreddit}.json`)
-      .then(response => response.json())
-      .then(json => dispatch(receivePosts(subreddit, json)))
-  }
-}
- 
-function shouldFetchPosts(state, subreddit) {
-  const posts = state.postsBySubreddit[subreddit]
-  if (!posts) {
-    return true
-  } else if (posts.isFetching) {
-    return false
-  } else {
-    return posts.didInvalidate
-  }
-}
- 
-export function fetchPostsIfNeeded(subreddit) {
-  return (dispatch, getState) => {
-    if (shouldFetchPosts(getState(), subreddit)) {
-      return dispatch(fetchPosts(subreddit))
-    }
+    dispatch(requestUser())
+    return fetch('https://api.spotify.com/v1/users/124465854/playlists', {
+      method: "GET",
+      headers: {
+      "Authorization": "Bearer "+ secret
+  },
+    }).then(response => response.json())
+    .then(json => dispatch(receivePlaylists(json)))
   }
 }
